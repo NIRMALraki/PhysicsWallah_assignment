@@ -1,14 +1,21 @@
 package com.example.physicswallah_assignment;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.example.physicswallah_assignment.Jsonvalues.ExclusionsBean;
+import com.example.physicswallah_assignment.Jsonvalues.FacilitiesBean;
+import com.example.physicswallah_assignment.Jsonvalues.OptionsBeans;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +29,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> adapter;
@@ -81,26 +90,78 @@ public class MainActivity extends AppCompatActivity {
                     data = data + newline;
                 }
                 System.out.println(data);
+                TreeMap<FacilitiesBean,TreeMap<Integer,OptionsBeans>> facilitiesBeanTreeMap= new TreeMap<>();
+                TreeMap<Integer, ExclusionsBean> exclusionsBeanTreeMap= new TreeMap<>();
                 if (!data.isEmpty())
                 {
                     JSONArray jsonArray = new JSONObject(data).getJSONArray("facilities");
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject JO = (JSONObject) jsonArray.get(i);
-                         result +=  "facility_id :" + JO.get("facility_id") + "\n"+
-                                "name :" + JO.get("name") + "\n";
-                         JSONArray options= JO.getJSONArray("options");
+                        FacilitiesBean facilitiesBean= new FacilitiesBean();
+
+                        facilitiesBean.setFacility_id(JO.getInt("facility_id"));
+                        facilitiesBean.setName(JO.getString("name"));
+                        JSONArray options= JO.getJSONArray("options");
+                        TreeMap<Integer,OptionsBeans> optionsBeansTreeMap= new TreeMap<>();
+                        Log.d(TAG, "run:facites done ");
                         for (int j = 0; j <options.length(); j++) {
                             JSONObject opt=options.getJSONObject(j);
-                            result += " name="+opt.get("name") +"\n"+ "icon ="+opt.get("icon")+"\n" +
-                                    "id="+opt.get("id")+ "\n";
+
+                            OptionsBeans optionsBeans= new OptionsBeans();
+                            optionsBeans.setId(opt.getInt("id"));
+                            optionsBeans.setIcon(opt.getString("icon"));
+                            optionsBeans.setName(opt.getString("name"));
+                            facilitiesBean.setOptions(optionsBeans);
+                            optionsBeansTreeMap.put(optionsBeans.getId(), optionsBeans);
 
 
                         }
+                        facilitiesBeanTreeMap.put(facilitiesBean,optionsBeansTreeMap);
 
 
 
                     }
-                    System.out.println(result);
+
+                    JSONArray exclutions = new JSONObject(data).getJSONArray("exclusions");
+                    for (int i = 0; i < exclutions.length(); i++) {
+                        JSONArray nested= exclutions.getJSONArray(i);
+                        ExclusionsBean exclusionsBean =new ExclusionsBean();
+                        for (int j = 0; j < nested.length(); j++) {
+                            JSONObject values= nested.getJSONObject(j);
+                            if (j%2==0)
+                            {
+                                exclusionsBean.setFacility_id1(values.getInt("facility_id"));
+                                exclusionsBean.setOptions_id1(values.getInt("options_id"));
+                            }
+                            else 
+                            {
+                                exclusionsBean.setFacility_id2(values.getInt("facility_id"));
+                                exclusionsBean.setOptions_id2(values.getInt("options_id"));
+                            }
+
+
+
+
+                        }
+                        exclusionsBeanTreeMap.put(i, exclusionsBean);
+
+                    }
+                    Set<FacilitiesBean> keys=facilitiesBeanTreeMap.keySet();
+                    Set<Integer> keys2=exclusionsBeanTreeMap.keySet();
+                    for (FacilitiesBean key:keys)
+                    {
+                        System.out.println(key.toString()+" : "+facilitiesBeanTreeMap.get(key).toString());
+                        
+                    }
+
+                    for (int k:keys2)
+                    {
+                        System.out.println(exclusionsBeanTreeMap.get(k).toString());
+                    }
+
+
+
+
 
                 }
             } catch (MalformedURLException e) {
