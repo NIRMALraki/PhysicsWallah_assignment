@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.example.physicswallah_assignment.Jsonvalues.ExclusionsBean;
@@ -29,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -39,22 +41,28 @@ public class MainActivity extends AppCompatActivity {
     ListView l;
     Button fetch;
     String result="";
+    Spinner spinner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        l=findViewById(R.id.list);
-        fetch=findViewById(R.id.button);
-        Intializer();
+         fetch=findViewById(R.id.button);
+        //l=findViewById(R.id.list);
+        //fetch=findViewById(R.id.button);
+        spinner=findViewById(R.id.property_type);
+        spinner.setPrompt("hint");
+        //Intializer();
         Toast.makeText(getApplicationContext(), "initialized", Toast.LENGTH_SHORT).show();
-        fetch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Fetchingjson().start();
-                Toast.makeText(getApplicationContext(), "fetching", Toast.LENGTH_SHORT).show();
+            fetch.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    new Fetchingjson().start();
+                    Toast.makeText(getApplicationContext(), "fetching", Toast.LENGTH_SHORT).show();
+                }
+            });
 
-            }
-        });
+
+
 
 
 
@@ -63,9 +71,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void Intializer() {
-        mainnode = new ArrayList<>();
-        adapter=new ArrayAdapter<String>(this, R.layout.activity_main,R.id.list,mainnode);
-        l.setAdapter(adapter);
+        //mainnode = new ArrayList<>();
+       // adapter=new ArrayAdapter<String>(this, R.layout.activity_main,R.id.list,mainnode);
+        //l.setAdapter(adapter);
 
 
     }
@@ -111,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
                             optionsBeans.setId(opt.getInt("id"));
                             optionsBeans.setIcon(opt.getString("icon"));
                             optionsBeans.setName(opt.getString("name"));
-                            facilitiesBean.setOptions(optionsBeans);
                             optionsBeansTreeMap.put(optionsBeans.getId(), optionsBeans);
 
 
@@ -159,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println(exclusionsBeanTreeMap.get(k).toString());
                     }
 
-
+                    display (facilitiesBeanTreeMap,exclusionsBeanTreeMap);
 
 
 
@@ -172,5 +179,44 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void display(TreeMap<FacilitiesBean, TreeMap<Integer, OptionsBeans>> facilitiesBeanTreeMap, TreeMap<Integer, ExclusionsBean> exclusionsBeanTreeMap) {
+
+        ArrayList<String> property_type = new ArrayList<>();
+        ArrayList<String> number_of_rooms = new ArrayList<>();
+        ArrayList<String> other_facilities = new ArrayList<>();
+
+        Set<FacilitiesBean> keys=facilitiesBeanTreeMap.keySet();
+       Set<Integer> keys2=exclusionsBeanTreeMap.keySet();
+        for (FacilitiesBean key:keys)
+        {
+            Map<Integer,OptionsBeans> op=    facilitiesBeanTreeMap.get(key);
+            Set<Integer> i = op.keySet();
+
+            for(int id:i)
+            {
+                if(key.getFacility_id()==1)
+                property_type.add(op.get(id).getName());
+                if(key.getFacility_id()==2)
+                {
+                    number_of_rooms.add(op.get(id).getName());
+                }
+                if(key.getFacility_id()==3)
+                {
+                    other_facilities.add(op.get(id).getName());
+                }
+
+            }
+
+        }
+        System.out.println(property_type);
+        System.out.println(number_of_rooms);
+        System.out.println(other_facilities);
+
+
+
+
+
     }
 }
