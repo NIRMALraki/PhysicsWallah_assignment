@@ -5,9 +5,12 @@ import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -35,48 +38,36 @@ import java.util.Set;
 import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
-    ArrayAdapter<String> adapter;
+    ArrayAdapter<String> adapter,adapter1,adapter2;
     String data="";
-    ArrayList<String> mainnode;
-    ListView l;
     Button fetch;
-    String result="";
-    Spinner spinner;
+    Spinner property_type_spinner,number_of_rooms_spinner,other_facilities_spinner;
+    TreeMap<FacilitiesBean,TreeMap<Integer,OptionsBeans>> facilitiesBeanTreeMap= new TreeMap<>();
+    TreeMap<Integer, ExclusionsBean> exclusionsBeanTreeMap= new TreeMap<>();
+    Handler handler= new Handler();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
          fetch=findViewById(R.id.button);
-        //l=findViewById(R.id.list);
-        //fetch=findViewById(R.id.button);
-        spinner=findViewById(R.id.property_type);
-        spinner.setPrompt("hint");
-        //Intializer();
+        property_type_spinner=findViewById(R.id.property_type);
+        number_of_rooms_spinner=findViewById(R.id.number_of_rooms);
+        other_facilities_spinner=findViewById(R.id.other_facilities);
         Toast.makeText(getApplicationContext(), "initialized", Toast.LENGTH_SHORT).show();
             fetch.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     new Fetchingjson().start();
                     Toast.makeText(getApplicationContext(), "fetching", Toast.LENGTH_SHORT).show();
+
                 }
             });
 
 
-
-
-
-
-
-
     }
 
-    private void Intializer() {
-        //mainnode = new ArrayList<>();
-       // adapter=new ArrayAdapter<String>(this, R.layout.activity_main,R.id.list,mainnode);
-        //l.setAdapter(adapter);
-
-
-    }
 
     class Fetchingjson extends Thread
     {
@@ -84,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
+
+
             try {
                 URL url = new URL("https://my-json-server.typicode.com/ricky1550/pariksha/db");
                 HttpURLConnection httpURLConnection= (HttpURLConnection) url.openConnection();
@@ -98,8 +91,7 @@ public class MainActivity extends AppCompatActivity {
                     data = data + newline;
                 }
                 System.out.println(data);
-                TreeMap<FacilitiesBean,TreeMap<Integer,OptionsBeans>> facilitiesBeanTreeMap= new TreeMap<>();
-                TreeMap<Integer, ExclusionsBean> exclusionsBeanTreeMap= new TreeMap<>();
+
                 if (!data.isEmpty())
                 {
                     JSONArray jsonArray = new JSONObject(data).getJSONArray("facilities");
@@ -166,7 +158,6 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println(exclusionsBeanTreeMap.get(k).toString());
                     }
 
-                    display (facilitiesBeanTreeMap,exclusionsBeanTreeMap);
 
 
 
@@ -178,24 +169,40 @@ public class MainActivity extends AppCompatActivity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    display (facilitiesBeanTreeMap,exclusionsBeanTreeMap);
+                }
+            });
+
         }
     }
 
     private void display(TreeMap<FacilitiesBean, TreeMap<Integer, OptionsBeans>> facilitiesBeanTreeMap, TreeMap<Integer, ExclusionsBean> exclusionsBeanTreeMap) {
-
+            /// array intialization
         ArrayList<String> property_type = new ArrayList<>();
+        property_type.add("select property type");
         ArrayList<String> number_of_rooms = new ArrayList<>();
+        number_of_rooms.add("select number of rooms");
         ArrayList<String> other_facilities = new ArrayList<>();
+        other_facilities.add("select other facilities");
 
         Set<FacilitiesBean> keys=facilitiesBeanTreeMap.keySet();
        Set<Integer> keys2=exclusionsBeanTreeMap.keySet();
+
         for (FacilitiesBean key:keys)
         {
-            Map<Integer,OptionsBeans> op=    facilitiesBeanTreeMap.get(key);
-            Set<Integer> i = op.keySet();
+            Map<Integer,OptionsBeans> op;
+            Set<Integer> keysetopt;
+            op= facilitiesBeanTreeMap.get(key);
+            keysetopt= op.keySet();
 
-            for(int id:i)
+
+            for(int id:keysetopt)
             {
+
                 if(key.getFacility_id()==1)
                 property_type.add(op.get(id).getName());
                 if(key.getFacility_id()==2)
@@ -214,9 +221,213 @@ public class MainActivity extends AppCompatActivity {
         System.out.println(number_of_rooms);
         System.out.println(other_facilities);
 
+         adapter = new ArrayAdapter<String>(MainActivity.this,R.layout.support_simple_spinner_dropdown_item,property_type);
+        property_type_spinner.setAdapter(adapter);
+
+
+        adapter2 = new ArrayAdapter<String >(MainActivity.this, R.layout.support_simple_spinner_dropdown_item,other_facilities);
+
+
+        property_type_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    String property_choice =parent.getItemAtPosition(position).toString();
+                    System.out.println(position);
+                   // exclude(position, id);
+                    if(position!=0)
+                    {
+                        number_of_rooms_spinner.setEnabled(true);
 
 
 
+                        for (FacilitiesBean key : keys) {
+                                    Map<Integer, OptionsBeans> op = facilitiesBeanTreeMap.get(key);
+                                    Set<Integer> ii = op.keySet();
+
+
+                                    for (int id1 : ii) {
+                                        if (op.get(id1).getName() == property_choice) {
+                                            //1
+                                            System.out.println(op.get(id1).getName()+" = " + property_choice);
+
+                                            int found_option_id=op.get(id1).getId();
+                                            int found_facility_id=key.getFacility_id();
+                                            //2
+                                            System.out.println(found_facility_id+" , "+found_option_id);
+                                            for (int exclusionkey:keys2)
+                                            {
+                                                if(exclusionsBeanTreeMap.get(exclusionkey).getFacility_id1()==found_facility_id && exclusionsBeanTreeMap.get(exclusionkey).getOptions_id1()==found_option_id)
+                                                {
+                                                        //3
+                                                        System.out.println(exclusionsBeanTreeMap.get(exclusionkey).getFacility_id1()+" == "+found_facility_id +" && "+ exclusionsBeanTreeMap.get(exclusionkey).getOptions_id1()+" == "+found_option_id);
+                                                    for (FacilitiesBean keyy:keys) {
+                                                        Map<Integer,OptionsBeans> op11 = facilitiesBeanTreeMap.get(keyy);
+                                                       Set<Integer> keysetopt = op11.keySet();
+
+
+                                                        for (int iddd : keysetopt) {
+
+
+                                                                int remove_id=exclusionsBeanTreeMap.get(exclusionkey).getOptions_id2();
+                                                                System.out.println(op11.get(iddd).getId());
+                                                            if(keyy.getFacility_id()==2) {
+                                                                number_of_rooms.clear();
+                                                                number_of_rooms.add("select number of rooms");
+                                                                if (op11.get(iddd).getId() != remove_id) {
+                                                                    System.out.println(op11.get(iddd).getId());
+                                                                    number_of_rooms.add(op11.get(iddd).getName());
+
+                                                                }
+
+                                                            }
+                                                            if (keyy.getFacility_id()==3)
+                                                            {
+                                                                if (op11.get(iddd).getId() != remove_id)
+                                                                {
+                                                                    //other_facilities.clear();
+                                                                    other_facilities.remove(op11.get(remove_id).getName());
+                                                                }
+                                                                }
+
+                                                        }
+                                                    }
+
+                                                        //4
+                                                        //System.out.println(key.getFacility_id()+" == "+exclusionsBeanTreeMap.get(exclusionkey).getFacility_id2()+" && "+op.get(id1).getId()+"=="+exclusionsBeanTreeMap.get(exclusionkey).getOptions_id2());
+
+
+                                                }
+
+                                            }
+                                        }
+
+                                    }
+                            }
+                        //int remove_id=exclusionsBeanTreeMap.get(exclusionkey).getOptions_id2();
+                            System.out.println(number_of_rooms);
+                        System.out.println(other_facilities);
+                        adapter1 = new ArrayAdapter<String >(MainActivity.this, R.layout.support_simple_spinner_dropdown_item,number_of_rooms);
+                        number_of_rooms_spinner.setAdapter(adapter1);
+
+
+
+                    }
+                    else
+                    {
+                        number_of_rooms_spinner.setEnabled(false);
+                        other_facilities_spinner.setEnabled(false);
+
+                    }
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        number_of_rooms_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String room_choice=parent.getItemAtPosition(position).toString();
+                    if(position!=0)
+                    {
+                        other_facilities_spinner.setEnabled(true);
+                        for (FacilitiesBean key : keys) {
+                            Map<Integer, OptionsBeans> op = facilitiesBeanTreeMap.get(key);
+                            Set<Integer> ii = op.keySet();
+
+
+                            for (int id1 : ii) {
+                                if (op.get(id1).getName() == room_choice) {
+                                    //1
+                                    System.out.println(op.get(id1).getName()+" = " + room_choice);
+
+                                    int found_option_id=op.get(id1).getId();
+                                    int found_facility_id=key.getFacility_id();
+                                    //2
+                                    System.out.println(found_facility_id+" , "+found_option_id);
+                                    for (int exclusionkey:keys2)
+                                    {
+                                        if(exclusionsBeanTreeMap.get(exclusionkey).getFacility_id1()==found_facility_id && exclusionsBeanTreeMap.get(exclusionkey).getOptions_id1()==found_option_id)
+                                        {
+                                            //3
+                                            System.out.println(exclusionsBeanTreeMap.get(exclusionkey).getFacility_id1()+" == "+found_facility_id +" && "+ exclusionsBeanTreeMap.get(exclusionkey).getOptions_id1()+" == "+found_option_id);
+                                            for (FacilitiesBean keyy:keys) {
+                                                Map<Integer,OptionsBeans> op11 = facilitiesBeanTreeMap.get(keyy);
+                                                Set<Integer> keysetopt = op11.keySet();
+
+
+                                                for (int iddd : keysetopt) {
+
+
+                                                    int remove_id=exclusionsBeanTreeMap.get(exclusionkey).getOptions_id2();
+                                                    System.out.println("remove id "+remove_id);
+                                                    System.out.println(op11.get(iddd).getId());
+                                                    if(keyy.getFacility_id()==3)
+                                                    {
+                                                            System.out.println(op11.get(iddd).getId());
+                                                            other_facilities.remove(op11.get(remove_id).getName());
+                                                    }
+
+                                                }
+                                            }
+
+                                            //4
+                                            //System.out.println(key.getFacility_id()+" == "+exclusionsBeanTreeMap.get(exclusionkey).getFacility_id2()+" && "+op.get(id1).getId()+"=="+exclusionsBeanTreeMap.get(exclusionkey).getOptions_id2());
+                                            System.out.println(other_facilities);
+
+                                        }
+
+                                    }
+                                }
+
+                            }
+
+
+                        }
+                        System.out.println(other_facilities);
+                        adapter2 = new ArrayAdapter<String >(MainActivity.this, R.layout.support_simple_spinner_dropdown_item,other_facilities);
+                        other_facilities_spinner.setAdapter(adapter2);
+                        other_facilities_spinner.setAdapter(adapter2);
+                    }
+                    else
+                    {
+                        other_facilities_spinner.setEnabled(false);
+                    }
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+
+        other_facilities_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String facility_choice= parent.getItemAtPosition(position).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+//
+
+
+
+
+
+    }
+    public void exclude(int id,long opt)
+    {
 
     }
 }
