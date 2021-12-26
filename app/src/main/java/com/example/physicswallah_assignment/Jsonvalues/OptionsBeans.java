@@ -27,12 +27,4 @@ public class OptionsBeans {
         this.id = id;
     }
 
-    @Override
-    public String toString() {
-        return "OptionsBeans{" +
-                "name='" + name + '\'' +
-                ", icon='" + icon + '\'' +
-                ", id=" + id +
-                '}';
-    }
 }

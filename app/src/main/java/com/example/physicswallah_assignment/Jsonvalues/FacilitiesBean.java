@@ -23,13 +23,7 @@ public class FacilitiesBean implements Comparable<FacilitiesBean> {
 
 
 
-    @Override
-    public String toString() {
-        return "FacilitiesBean{" +
-                "facility_id=" + facility_id +
-                ", Name='" + Name + '\'' +
-                '}';
-    }
+
 
 
     @Override

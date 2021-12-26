@@ -35,13 +35,5 @@ public class ExclusionsBean {
         this.options_id1 = options_id1;
     }
 
-    @Override
-    public String toString() {
-        return "ExclusionsBean{" +
-                "facility_id1=" + facility_id1 +
-                ", facility_id2=" + facility_id2 +
-                ", options_id2=" + options_id2 +
-                ", options_id1=" + options_id1 +
-                '}';
-    }
+
 }
